@@ -16,7 +16,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
 .wrap{max-width:1240px;margin:0 auto;padding:28px 24px 40px}
-.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:22px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:22px}
 @media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}.wrap{padding:16px 12px 28px}}
 .card{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:22px 24px;min-width:0}
 .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
@@ -86,6 +86,17 @@ footer a,.card a{color:var(--water)}
 <body>
 <div class="wrap">
   <div class="grid">
+    <section class="card" id="wxCard" aria-label="Weather">
+      <div class="head">
+        <div>
+          <div class="kicker">Marine point forecast · NWS Newport/Morehead City</div>
+          <h2>Weather</h2>
+          <div class="sub" id="wxArea"></div>
+        </div>
+      </div>
+      <div id="wxBody"><div class="sub" style="margin-top:16px">Loading…</div></div>
+    </section>
+
     <section class="card" id="tideCard" aria-label="Tides">
       <div class="head">
         <div>
@@ -104,17 +115,6 @@ footer a,.card a{color:var(--water)}
       <div class="cols" id="tideTables"></div>
       <div class="facts" id="facts"></div>
       <div class="week"><table><thead><tr><th>Week ahead</th><th>Highs</th><th>Lows</th></tr></thead><tbody id="week"></tbody></table></div>
-    </section>
-
-    <section class="card" id="wxCard" aria-label="Weather">
-      <div class="head">
-        <div>
-          <div class="kicker">Marine point forecast · NWS Newport/Morehead City</div>
-          <h2>Weather</h2>
-          <div class="sub" id="wxArea"></div>
-        </div>
-      </div>
-      <div id="wxBody"><div class="sub" style="margin-top:16px">Loading…</div></div>
     </section>
   </div>
   <footer id="foot"></footer>
