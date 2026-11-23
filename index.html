@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spooner's Creek Tides &amp; Weather</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F3EFE6; --card:#FAF8F3; --ink:#1E2226; --muted:#6A6862; --rule:#DAD3C4;
+  --water:#2F5D73; --water-soft:#D3E2E7; --night:rgba(30,34,38,.06); --red:#B23A2E;
+  --serif:'Fraunces',Georgia,serif; --sans:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding:28px 24px 40px}
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:22px}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}.wrap{padding:16px 12px 28px}}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:22px 24px;min-width:0}
+.kicker{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1,h2{font-family:var(--serif);font-weight:600;margin:2px 0 0;letter-spacing:-.01em}
+h1{font-size:30px} h2{font-size:30px}
+.sub{color:var(--muted);font-size:13px;margin-top:4px}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--rule);padding-bottom:14px}
+.daynav{display:flex;align-items:center;gap:6px}
+.daynav button{font:500 13px var(--sans);background:transparent;border:1px solid var(--rule);color:var(--ink);border-radius:4px;padding:6px 10px;cursor:pointer}
+.daynav button:hover{border-color:var(--ink)}
+.daynav button:disabled{opacity:.35;cursor:default}
+.daynav .date{font:500 14px var(--sans);min-width:150px;text-align:center}
+.hero{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin:18px 0 4px}
+.big{font-family:var(--serif);font-size:64px;line-height:1;font-weight:400;letter-spacing:-.02em}
+.big small{font-size:24px;margin-left:4px;color:var(--muted)}
+.trend{font-size:16px;font-weight:600}
+.next{color:var(--muted);font-size:14px;margin-top:6px}
+.next b{color:var(--ink);font-weight:600}
+svg text{font-family:var(--mono)}
+.chart{width:100%;height:auto;display:block;margin:10px 0 6px}
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:14px}
+@media (max-width:520px){.cols{grid-template-columns:minmax(0,1fr)}}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 0 6px;border-bottom:1px solid var(--rule)}
+td{padding:7px 0;border-bottom:1px solid var(--rule)}
+td.t{font-family:var(--mono)} td.v{text-align:right;font-family:var(--mono)}
+tr.past td{color:var(--muted)}
+.tag{display:inline-block;font:600 11px var(--mono);width:18px;height:18px;line-height:18px;text-align:center;border-radius:3px;margin-right:8px}
+.tag.H{background:var(--water);color:#fff}.tag.L{background:var(--water-soft);color:var(--water)}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin-top:18px;border-top:1px solid var(--rule)}
+@media (max-width:620px){.facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.fact{padding:12px 10px 4px 0}
+.fact .l{font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.fact .v{font-family:var(--serif);font-size:24px;margin-top:4px;display:flex;align-items:center;gap:8px}
+.fact .s{font-size:12px;color:var(--muted);margin-top:2px}
+.hazard{display:flex;gap:10px;align-items:center;background:#F6E3DF;border:1px solid #E5B9B1;color:var(--red);border-radius:4px;padding:10px 12px;margin-top:14px;font-weight:600;font-size:14px}
+.hazard a{color:var(--red)}
+.now{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center;margin-top:16px}
+.now .temp{font-family:var(--serif);font-size:64px;line-height:1}
+.now .temp small{font-size:20px;color:var(--muted)}
+.obsline{font-size:14px;line-height:1.55}
+.obsline span{color:var(--muted)}
+.lead{display:grid;grid-template-columns:64px minmax(0,1fr);gap:14px;margin-top:18px;padding-top:16px;border-top:1px solid var(--rule)}
+.lead .name{font-family:var(--serif);font-size:20px;font-weight:600}
+.lead .hl{font:500 13px var(--mono);color:var(--muted);margin-top:2px}
+.lead p{margin:6px 0 0;font-size:15px;line-height:1.5}
+.periods{margin-top:12px}
+.per{display:grid;grid-template-columns:34px 118px 52px minmax(0,1fr);gap:10px;align-items:start;padding:9px 0;border-top:1px solid var(--rule);font-size:13.5px;line-height:1.45}
+.per .n{font-weight:600}
+.per .tp{font-family:var(--mono);text-align:right}
+.per .tp.lo{color:var(--water)}
+.per .tx{color:#3b3e42}
+@media (max-width:520px){.per{grid-template-columns:30px minmax(0,1fr) auto;font-size:13.5px}.per .tx{grid-column:2 / -1}}
+.week{margin-top:18px}
+.week td{font-family:var(--mono);font-size:12.5px;padding:6px 0;vertical-align:top}
+.week td:first-child{font-family:var(--sans);font-weight:600;font-size:13px;width:104px}
+.week tr.cur td:first-child{color:var(--water)}
+.week button{all:unset;cursor:pointer}
+.week button:hover{text-decoration:underline}
+@media (max-width:520px){.week td{font-size:11.5px}.week td:first-child{width:62px}.week td:nth-child(2){padding-right:8px}}
+.stale{color:var(--red);font-weight:600}
+footer{margin-top:18px;font-size:12px;color:var(--muted);line-height:1.6}
+footer a,.card a{color:var(--water)}
+.err{padding:24px;color:var(--red)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="grid">
+    <section class="card" id="tideCard" aria-label="Tides">
+      <div class="head">
+        <div>
+          <div class="kicker">Spooner's Creek · NOAA 8656467</div>
+          <h1>Tides</h1>
+        </div>
+        <div class="daynav">
+          <button id="prev" aria-label="Previous day">‹</button>
+          <div class="date" id="dateLabel">…</div>
+          <button id="next" aria-label="Next day">›</button>
+          <button id="today">Today</button>
+        </div>
+      </div>
+      <div id="tideHero"></div>
+      <svg class="chart" id="chart" viewBox="0 0 640 240" role="img" aria-label="Tide curve for the selected day"></svg>
+      <div class="cols" id="tideTables"></div>
+      <div class="facts" id="facts"></div>
+      <div class="week"><table><thead><tr><th>Week ahead</th><th>Highs</th><th>Lows</th></tr></thead><tbody id="week"></tbody></table></div>
+    </section>
+
+    <section class="card" id="wxCard" aria-label="Weather">
+      <div class="head">
+        <div>
+          <div class="kicker">Marine point forecast · NWS Newport/Morehead City</div>
+          <h2>Weather</h2>
+          <div class="sub" id="wxArea"></div>
+        </div>
+      </div>
+      <div id="wxBody"><div class="sub" style="margin-top:16px">Loading…</div></div>
+    </section>
+  </div>
+  <footer id="foot"></footer>
+</div>
+
+<script>
+(function(){
+const TZ='America/New_York', LAT=34.725, LON=-76.8033, RAD=Math.PI/180;
+let TIDES=[], WX=null, sel=null; // sel = {y,m,d}
+
+// ---------- time helpers (all display in Eastern time) ----------
+const partsFmt = new Intl.DateTimeFormat('en-US',{timeZone:TZ,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+function etParts(ms){const o={};for(const p of partsFmt.formatToParts(new Date(ms)))o[p.type]=+p.value||p.value;return {y:+o.year,m:+o.month,d:+o.day,h:+o.hour%24,mi:+o.minute,s:+o.second};}
+function offsetMin(ms){const p=etParts(ms);return (Date.UTC(p.y,p.m-1,p.d,p.h,p.mi,p.s)-Math.floor(ms/1000)*1000)/60000;}
+function etEpoch(y,m,d,h,mi){const naive=Date.UTC(y,m-1,d,h,mi);let ms=naive+300*60000;ms=naive-offsetMin(ms)*60000;return naive-offsetMin(ms)*60000;}
+const fTime=new Intl.DateTimeFormat('en-US',{timeZone:TZ,hour:'numeric',minute:'2-digit'});
+const fDay=new Intl.DateTimeFormat('en-US',{timeZone:TZ,weekday:'short',month:'short',day:'numeric'});
+const fDayLong=new Intl.DateTimeFormat('en-US',{timeZone:TZ,weekday:'long',month:'long',day:'numeric'});
+const t12=ms=>fTime.format(new Date(ms)).replace(' AM',' am').replace(' PM',' pm');
+function addDays(s,n){const dt=new Date(Date.UTC(s.y,s.m-1,s.d+n));return {y:dt.getUTCFullYear(),m:dt.getUTCMonth()+1,d:dt.getUTCDate()};}
+const dayStart=s=>etEpoch(s.y,s.m,s.d,0,0);
+function todayET(){const p=etParts(Date.now());return {y:p.y,m:p.m,d:p.d};}
+const same=(a,b)=>a.y===b.y&&a.m===b.m&&a.d===b.d;
+function ago(ms){const m=Math.round((Date.now()-ms)/60000);if(m<1)return 'just now';if(m<60)return m+' min ago';const h=Math.round(m/60);if(h<48)return h+' hr ago';return Math.round(h/24)+' days ago';}
+
+// ---------- tides ----------
+function parseTides(str){return str.trim().split(/\s+/).map(x=>{const y=2000+ +x.slice(0,2),m=+x.slice(2,4),d=+x.slice(4,6),h=+x.slice(6,8),mi=+x.slice(8,10);return {t:etEpoch(y,m,d,h,mi),type:x[10],v:parseFloat(x.slice(11))};});}
+function idxAt(t){let lo=0,hi=TIDES.length-1;if(t<TIDES[0].t||t>=TIDES[hi].t)return -1;while(hi-lo>1){const mid=(lo+hi)>>1;if(TIDES[mid].t<=t)lo=mid;else hi=mid;}return lo;}
+function heightAt(t){const i=idxAt(t);if(i<0)return null;const a=TIDES[i],b=TIDES[i+1];const f=(t-a.t)/(b.t-a.t);return a.v+(b.v-a.v)*(1-Math.cos(Math.PI*f))/2;}
+
+// ---------- sun & moon (approximate, standard sunrise equation) ----------
+function sunTimes(s){const n=Math.round((Date.UTC(s.y,s.m-1,s.d,12)-Date.UTC(2000,0,1,12))/864e5);const Js=n-LON/360;const M=((357.5291+0.98560028*Js)%360);const Mr=M*RAD;const C=1.9148*Math.sin(Mr)+0.02*Math.sin(2*Mr)+0.0003*Math.sin(3*Mr);const L=((M+C+180+102.9372)%360)*RAD;const Jt=2451545+Js+0.0053*Math.sin(Mr)-0.0069*Math.sin(2*L);const dec=Math.asin(Math.sin(L)*Math.sin(23.4397*RAD));const cw=(Math.sin(-0.833*RAD)-Math.sin(LAT*RAD)*Math.sin(dec))/(Math.cos(LAT*RAD)*Math.cos(dec));const w=Math.acos(cw)/RAD;const ep=J=>(J-2440587.5)*864e5;return {rise:ep(Jt-w/360),set:ep(Jt+w/360)};}
+function moon(ms){const jd=ms/864e5+2440587.5;let f=((jd-2451550.1)/29.530588853)%1;if(f<0)f+=1;const illum=(1-Math.cos(2*Math.PI*f))/2;const names=[[.0339,'New moon'],[.216,'Waxing crescent'],[.284,'First quarter'],[.466,'Waxing gibbous'],[.534,'Full moon'],[.716,'Waning gibbous'],[.784,'Last quarter'],[.966,'Waning crescent'],[1.01,'New moon']];return {f,illum,name:names.find(x=>f<x[0])[1]};}
+function moonSVG(f,r=11){const c=r+1,k=Math.cos(2*Math.PI*f),rx=Math.abs(k)*r,wax=f<.5;let d;
+ if(wax){d=`M${c},${c-r} A${r},${r} 0 0 1 ${c},${c+r} A${rx},${r} 0 0 ${k>0?0:1} ${c},${c-r}Z`;}
+ else{d=`M${c},${c-r} A${r},${r} 0 0 0 ${c},${c+r} A${rx},${r} 0 0 ${k>0?1:0} ${c},${c-r}Z`;}
+ return `<svg width="${2*c}" height="${2*c}" viewBox="0 0 ${2*c} ${2*c}" aria-hidden="true"><circle cx="${c}" cy="${c}" r="${r}" fill="#3a3f45"/><path d="${d}" fill="#EFE9D8"/><circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="#3a3f45" stroke-width="1"/></svg>`;}
+
+// ---------- rendering: tides ----------
+function renderTides(){
+  const today=todayET(), isToday=same(sel,today), now=Date.now();
+  const t0=dayStart(sel), t1=dayStart(addDays(sel,1));
+  document.getElementById('dateLabel').textContent=isToday?'Today, '+fDay.format(new Date(t0+12*36e5)).replace(/^\w+, /,''):fDay.format(new Date(t0+12*36e5));
+  const first=TIDES[0].t,last=TIDES[TIDES.length-1].t;
+  document.getElementById('prev').disabled=dayStart(addDays(sel,-1))<first;
+  document.getElementById('next').disabled=dayStart(addDays(sel,2))>last;
+  document.getElementById('today').disabled=isToday;
+
+  // hero
+  const hero=document.getElementById('tideHero');
+  if(isToday){
+    const h=heightAt(now),i=idxAt(now);
+    if(h==null){hero.innerHTML='<div class="next stale">No tide data for this time. The data file needs a refresh.</div>';}
+    else{const nx=TIDES[i+1],rising=nx.type==='H';const mins=Math.round((nx.t-now)/6e4);const hh=Math.floor(mins/60),mm=mins%60;
+      hero.innerHTML=`<div class="hero"><div class="big">${h.toFixed(1)}<small>ft</small></div><div class="trend" style="color:${rising?'var(--water)':'var(--ink)'}">${rising?'▲ Rising':'▼ Falling'}</div></div>
+      <div class="next">Next <b>${nx.type==='H'?'high':'low'} ${nx.v.toFixed(1)} ft</b> at <b>${t12(nx.t)}</b> · in ${hh?hh+' hr ':''}${mm} min</div>`;}
+  } else {
+    hero.innerHTML=`<div class="hero"><div class="big" style="font-size:40px">${fDayLong.format(new Date(t0+12*36e5))}</div></div><div class="next">Predicted tides for the selected day</div>`;
+  }
+
+  // chart
+  const W=640,H=240,pl=34,pr=10,pt=26,pb=26,cw=W-pl-pr,ch=H-pt-pb;
+  const pts=[];for(let t=t0;t<=t1;t+=6e5){const v=heightAt(t);if(v!=null)pts.push([t,v]);}
+  const ext=TIDES.filter(e=>e.t>=t0&&e.t<t1);
+  const vals=pts.map(p=>p[1]);const vmin=Math.min(-0.5,Math.floor((Math.min(...vals)-0.2)*2)/2),vmax=Math.max(2.5,Math.ceil((Math.max(...vals)+0.3)*2)/2);
+  const X=t=>pl+(t-t0)/(t1-t0)*cw, Y=v=>pt+(vmax-v)/(vmax-vmin)*ch;
+  let s='';
+  const sun=sunTimes(sel);
+  s+=`<rect x="${pl}" y="${pt}" width="${X(sun.rise)-pl}" height="${ch}" fill="var(--night)"/>`;
+  s+=`<rect x="${X(sun.set)}" y="${pt}" width="${pl+cw-X(sun.set)}" height="${ch}" fill="var(--night)"/>`;
+  for(let v=Math.ceil(vmin);v<=vmax;v+=1){s+=`<line x1="${pl}" x2="${pl+cw}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--rule)" stroke-width="1"/><text x="${pl-6}" y="${Y(v)+3.5}" font-size="10" fill="var(--muted)" text-anchor="end">${v}</text>`;}
+  s+=`<text x="${pl-6}" y="${pt-10}" font-size="10" fill="var(--muted)" text-anchor="end">ft</text>`;
+  const hrs=[0,3,6,9,12,15,18,21,24],lab=['12a','3a','6a','9a','12p','3p','6p','9p','12a'];
+  hrs.forEach((h,k)=>{const tx=h===24?t1:etEpoch(sel.y,sel.m,sel.d,h,0);s+=`<text x="${X(tx)}" y="${H-8}" font-size="10" fill="var(--muted)" text-anchor="${k===0?'start':k===8?'end':'middle'}">${lab[k]}</text>`;});
+  if(pts.length){
+    const line=pts.map((p,i)=>(i?'L':'M')+X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)).join('');
+    s+=`<path d="${line}L${X(pts.at(-1)[0]).toFixed(1)},${pt+ch}L${X(pts[0][0]).toFixed(1)},${pt+ch}Z" fill="var(--water-soft)" opacity=".85"/>`;
+    s+=`<path d="${line}" fill="none" stroke="var(--water)" stroke-width="2"/>`;
+  }
+  ext.forEach(e=>{const x=X(e.t),y=Y(e.v),up=e.type==='H';const anchor=x<pl+40?'start':x>pl+cw-40?'end':'middle';
+    s+=`<circle cx="${x}" cy="${y}" r="3.5" fill="${up?'var(--water)':'var(--card)'}" stroke="var(--water)" stroke-width="1.5"/>`;
+    s+=`<text x="${x}" y="${up?y-9:y+16}" font-size="10.5" fill="var(--ink)" text-anchor="${anchor}">${e.v.toFixed(1)} · ${t12(e.t).replace(' ','')}</text>`;});
+  if(isToday){const h=heightAt(now);if(h!=null){const x=X(now);s+=`<line x1="${x}" x2="${x}" y1="${pt}" y2="${pt+ch}" stroke="var(--red)" stroke-width="1.2" stroke-dasharray="3 3"/><circle cx="${x}" cy="${Y(h)}" r="5" fill="var(--red)" stroke="#fff" stroke-width="1.5"/><text x="${x+(x>pl+cw-60?-6:6)}" y="${pt-10}" font-size="10" fill="var(--red)" text-anchor="${x>pl+cw-60?'end':'start'}">now</text>`;}}
+  document.getElementById('chart').innerHTML=s;
+
+  // tables: selected day + next day
+  const tbl=(day,title)=>{const a=dayStart(day),b=dayStart(addDays(day,1));const rows=TIDES.filter(e=>e.t>=a&&e.t<b);
+    return `<div><table><thead><tr><th colspan="3">${title}</th></tr></thead><tbody>${rows.map(e=>`<tr class="${e.t<now?'past':''}"><td><span class="tag ${e.type}">${e.type}</span>${e.type==='H'?'High':'Low'}</td><td class="t">${t12(e.t)}</td><td class="v">${e.v.toFixed(2)} ft</td></tr>`).join('')||'<tr><td colspan="3">No data</td></tr>'}</tbody></table></div>`;};
+  const nd=addDays(sel,1);
+  document.getElementById('tideTables').innerHTML=tbl(sel,isToday?'Today':fDay.format(new Date(t0+12*36e5)))+tbl(nd,isToday?'Tomorrow':fDay.format(new Date(dayStart(nd)+12*36e5)));
+
+  // facts
+  const mn=moon(t0+20*36e5); // evening of selected day
+  const o=WX&&WX.obs;
+  const wt=o&&o.water_f!=null?`${o.water_f.toFixed(0)}°F`:'—';
+  document.getElementById('facts').innerHTML=`
+   <div class="fact"><div class="l">Sunrise</div><div class="v">${t12(sun.rise)}</div></div>
+   <div class="fact"><div class="l">Sunset</div><div class="v">${t12(sun.set)}</div></div>
+   <div class="fact"><div class="l">Moon</div><div class="v">${moonSVG(mn.f)}<span style="font-size:18px">${Math.round(mn.illum*100)}%</span></div><div class="s">${mn.name}</div></div>
+   <div class="fact"><div class="l">Water temp</div><div class="v">${wt}</div><div class="s">Beaufort gauge${o&&o.time?' · '+t12(parseLocal(o.time)):''}</div></div>`;
+  renderWeek();
+}
+function renderWeek(){
+  let rows='';const start=todayET();
+  for(let k=0;k<7;k++){const d=addDays(start,k),a=dayStart(d),b=dayStart(addDays(d,1));const ev=TIDES.filter(e=>e.t>=a&&e.t<b);if(!ev.length)continue;
+    const fmt=t=>ev.filter(e=>e.type===t).map(e=>`${t12(e.t)} (${e.v.toFixed(1)})`).join('<br>');
+    rows+=`<tr class="${same(d,sel)?'cur':''}"><td><button data-k="${k}">${k===0?'Today':fDay.format(new Date(a+12*36e5)).replace(/,.*/,'')+' '+d.d}</button></td><td>${fmt('H')}</td><td>${fmt('L')}</td></tr>`;}
+  const w=document.getElementById('week');w.innerHTML=rows;
+  w.querySelectorAll('button').forEach(btn=>btn.onclick=()=>{sel=addDays(todayET(),+btn.dataset.k);renderTides();document.getElementById('tideCard').scrollIntoView({behavior:'smooth'});});
+}
+function parseLocal(s){const m=s.match(/(\d+)-(\d+)-(\d+) (\d+):(\d+)/);return etEpoch(+m[1],+m[2],+m[3],+m[4],+m[5]);}
+
+// ---------- weather icons ----------
+const ic={
+ sun:`<circle cx="32" cy="32" r="11" fill="none" stroke="currentColor" stroke-width="3"/>`+[0,45,90,135,180,225,270,315].map(a=>{const r=a*RAD;return `<line x1="${32+17*Math.cos(r)}" y1="${32+17*Math.sin(r)}" x2="${32+23*Math.cos(r)}" y2="${32+23*Math.sin(r)}" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>`}).join(''),
+ moon:`<path d="M38 12a20 20 0 1 0 14 30A16 16 0 0 1 38 12z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>`,
+ cloud:(y=0)=>`<path d="M20 ${48+y}h26a10 10 0 0 0 0-20 14 14 0 0 0-27-3A9 9 0 0 0 20 ${48+y}z" fill="var(--card)" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>`,
+};
+function iconSVG(code,text){
+  code=(code||'').toLowerCase();const dm=code.match(/i=([a-z_]+)/);if(dm)code=dm[1];
+  code=code.replace(/^m_/,'').replace(/\.png.*$/,'').replace(/\d+$/,'');
+  const night=/^n/.test(code);const base=night?code.slice(1):code;const t=(text||'').toLowerCase();
+  let kind='partly';
+  if(/tsra|tstm|thunder/.test(base)||/thunder/.test(t))kind='storm';
+  else if(/ra|shwrs|drizzle/.test(base))kind='rain';
+  else if(/sn|blizzard|ip/.test(base))kind='snow';
+  else if(/fg|hz|fu|du/.test(base))kind='fog';
+  else if(/ovc/.test(base))kind='cloud';
+  else if(/bkn/.test(base))kind='mostly';
+  else if(/sct|few/.test(base))kind='partly';
+  else if(/skc/.test(base))kind='clear';
+  else if(/rain|showers/.test(t))kind='rain';
+  const orb=night?ic.moon:ic.sun;let g='';
+  const small=s=>`<g transform="translate(-8,-10) scale(.8)">${s}</g>`;
+  if(kind==='clear')g=orb;
+  else if(kind==='partly')g=small(orb)+`<g transform="translate(4,6)">${ic.cloud(-4)}</g>`;
+  else if(kind==='mostly')g=`<g transform="translate(-10,-12) scale(.7)">${orb}</g>`+ic.cloud(0);
+  else if(kind==='cloud')g=ic.cloud(0);
+  else if(kind==='rain')g=ic.cloud(-6)+[22,32,42].map(x=>`<line x1="${x}" y1="50" x2="${x-4}" y2="58" stroke="var(--water)" stroke-width="3" stroke-linecap="round"/>`).join('');
+  else if(kind==='storm')g=ic.cloud(-6)+`<path d="M34 44l-7 10h7l-4 9 10-13h-7l4-6z" fill="var(--red)" stroke="var(--red)" stroke-width="1.5" stroke-linejoin="round"/>`;
+  else if(kind==='snow')g=ic.cloud(-6)+[22,32,42].map(x=>`<circle cx="${x}" cy="54" r="2.4" fill="currentColor"/>`).join('');
+  else if(kind==='fog')g=[24,32,40,48].map((y,i)=>`<line x1="${12+i%2*4}" y1="${y}" x2="${52-i%2*4}" y2="${y}" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>`).join('');
+  return `<svg viewBox="0 0 64 64" width="100%" height="100%" style="color:var(--ink)" aria-hidden="true">${g}</svg>`;
+}
+
+// ---------- rendering: weather ----------
+function renderWx(){
+  const body=document.getElementById('wxBody');
+  if(!WX){body.innerHTML='<div class="err">Couldn\'t reach NOAA or the National Weather Service. The page will try again in 15 minutes. <a href="https://forecast.weather.gov/MapClick.php?lat=34.6603&lon=-76.712" target="_blank" rel="noopener">Open the NWS forecast</a>.</div>';return;}
+  const f=WX.fcst,o=WX.obs,now=Date.now();
+  const NWSLINK='<a href="https://forecast.weather.gov/MapClick.php?lat=34.6603&lon=-76.712" target="_blank" rel="noopener">Open the NWS forecast</a>';
+  if(!f){document.getElementById('wxArea').textContent='3 NM south of the Morehead City turning basin · zone AMZ158';
+    body.innerHTML=`<div class="lead"><div></div><div class="stale">Couldn't reach the National Weather Service just now. The page will try again in 15 minutes. ${NWSLINK}.</div></div>`;return;}
+  document.getElementById('wxArea').textContent='3 NM south of the Morehead City turning basin · zone '+(f.zone||'AMZ158');
+  const P=f.periods.map((p,i,a)=>({...p,s:Date.parse(p.start),e:i+1<a.length?Date.parse(a[i+1].start):Date.parse(p.start)+12*36e5}));
+  const live=P.filter(p=>p.e>now);
+  const fetched=Date.parse(f.fetched),issued=Date.parse(f.created);
+  const stale=now-fetched>6*36e5;
+  let h='';
+  (f.hazards||[]).forEach(z=>{h+=`<div class="hazard"><span>⚠</span><span>${esc(z.name)}${z.url?` · <a href="${esc(z.url)}" target="_blank" rel="noopener">details</a>`:''}</span></div>`;});
+  if(o&&o.air_f!=null){
+    const inHg=o.pressure_mb!=null?(o.pressure_mb*0.02953).toFixed(2):null;
+    h+=`<div class="now"><div class="temp">${Math.round(o.air_f)}°<small>F</small></div><div class="obsline">
+      <div><span>Wind</span> ${o.wind_dir||''} ${o.wind_kt!=null?Math.round(o.wind_kt)+' kt':'—'}${o.gust_kt!=null?`, gusts ${Math.round(o.gust_kt)} kt`:''}</div>
+      <div><span>Water</span> ${o.water_f!=null?o.water_f.toFixed(1)+'°F':'—'} · <span>Pressure</span> ${o.pressure_mb!=null?inHg+' in':'—'}</div>
+      <div><span>Observed ${o.time?t12(parseLocal(o.time)):''} at ${esc(o.station)}</span></div></div></div>`;
+  }
+  if(live.length){
+    const p=live[0];
+    h+=`<div class="lead"><div style="width:64px;height:64px">${iconSVG(p.icon,p.text)}</div><div><div class="name">${esc(p.name)}</div><div class="hl">${p.label} ${esc(p.temp)}°F</div><p>${esc(p.text)}</p></div></div>`;
+    h+=`<div class="periods">`+live.slice(1).map(p=>`<div class="per"><div style="width:32px;height:32px">${iconSVG(p.icon,p.text)}</div><div class="n">${esc(p.name)}</div><div class="tp ${p.label==='Low'?'lo':''}">${p.label==='Low'?'L':'H'} ${esc(p.temp)}°</div><div class="tx">${esc(p.text)}</div></div>`).join('')+`</div>`;
+  } else {
+    h+=`<div class="lead"><div></div><div class="stale">The saved forecast has expired. <a href="https://forecast.weather.gov/MapClick.php?lat=34.6603&lon=-76.712" target="_blank" rel="noopener">Open the live NWS forecast</a>.</div></div>`;
+  }
+  h+=`<div class="sub" style="margin-top:14px">${issued?`NWS issued ${t12(issued)} ${fDay.format(new Date(issued))} · `:''}updated <span class="${stale?'stale':''}">${ago(fetched)}</span>${wxError?' · <span class="stale">couldn\'t reach NWS, showing last saved forecast</span>':''}${stale?` · <a href="https://forecast.weather.gov/MapClick.php?lat=34.6603&lon=-76.712" target="_blank" rel="noopener">check NWS for the latest</a>`:''}</div>`;
+  body.innerHTML=h;
+}
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function renderFoot(){
+  document.getElementById('foot').innerHTML=`Tide heights are NOAA predictions in feet above mean lower low water (MLLW), not live readings. Wind and storms can push actual water higher or lower. Data loads live from NOAA and the National Weather Service each time the page opens, then refreshes every 15 minutes. Times are Eastern. Sunrise, sunset and moon are calculated and approximate.<br>
+  Sources: <a href="https://tidesandcurrents.noaa.gov/stationhome.html?id=8656467" target="_blank" rel="noopener">NOAA Spooners Creek 8656467</a> · <a href="https://tidesandcurrents.noaa.gov/stationhome.html?id=8656483" target="_blank" rel="noopener">NOAA Beaufort 8656483</a> · <a href="https://forecast.weather.gov/MapClick.php?x=193&y=234&site=mhx&zmx=&zmy=&map_x=192&map_y=233" target="_blank" rel="noopener">NWS marine forecast</a>`;
+}
+
+// ---------- data loading (live from NOAA and NWS) ----------
+const COOPS='https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?units=english&time_zone=lst_ldt&format=json&application=spooners_creek_family_page';
+const NWS_JSON='https://forecast.weather.gov/MapClick.php?lat=34.6603&lon=-76.712&FcstType=json';
+const ymd=s=>''+s.y+String(s.m).padStart(2,'0')+String(s.d).padStart(2,'0');
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let wxError=null, tideRange=null;
+async function getJ(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(r.status);return r.json();}
+function setTides(preds){TIDES=preds.map(p=>{const m=p.t.match(/(\d+)-(\d+)-(\d+) (\d+):(\d+)/);return {t:etEpoch(+m[1],+m[2],+m[3],+m[4],+m[5]),type:p.type,v:parseFloat(p.v)};});}
+async function loadTides(){
+  const a=addDays(todayET(),-2),b=addDays(todayET(),45);
+  try{const j=await getJ(COOPS+'&product=predictions&station=8656467&datum=MLLW&interval=hilo&begin_date='+ymd(a)+'&end_date='+ymd(b));
+    if(!j.predictions||!j.predictions.length)throw new Error('no data');
+    setTides(j.predictions);store.set('sc_tides',j.predictions);}
+  catch(e){const c=store.get('sc_tides');if(c&&!TIDES.length)setTides(c);}
+}
+async function loadForecast(){
+  const j=await getJ(NWS_JSON);const d=j.data,t=j.time;
+  return {fetched:new Date().toISOString(),created:j.creationDate,area:j.location.areaDescription,zone:j.location.zone,
+    hazards:(d.hazard||[]).map((h,i)=>({name:h,url:((d.hazardUrl||[])[i]||'').replace(/&amp;/g,'&')})),
+    periods:t.startPeriodName.map((n,i)=>({name:n,start:t.startValidTime[i],label:t.tempLabel[i],temp:d.temperature[i],pop:d.pop[i],icon:(d.iconLink[i]||'').split('/').pop(),text:(d.text[i]||'').replace(/\s+/g,' ').trim()}))};
+}
+async function loadObs(){
+  const g=async p=>{try{const j=await getJ(COOPS+'&station=8656483&date=latest&product='+p);return (j.data&&j.data[0])||null}catch(e){return null}};
+  const [a,w,wi,pr]=await Promise.all(['air_temperature','water_temperature','wind','air_pressure'].map(g));
+  if(!a&&!w&&!wi&&!pr)return null;
+  return {station:'Beaufort, Duke Marine Lab',id:'8656483',time:(a||w||wi||pr).t,air_f:a?+a.v:null,water_f:w?+w.v:null,wind_kt:wi?+wi.s:null,gust_kt:wi?+wi.g:null,wind_dir:wi?wi.dr:null,pressure_mb:pr?+pr.v:null};
+}
+async function loadWx(){
+  const prev=WX||store.get('sc_wx');
+  const [f,o]=await Promise.all([loadForecast().catch(()=>null),loadObs().catch(()=>null)]);
+  wxError=f?null:new Date();
+  WX={fcst:f||(prev&&prev.fcst),obs:o||(prev&&prev.obs)};
+  if(!WX.fcst&&!WX.obs)WX=null;
+  if(f)store.set('sc_wx',WX);
+  renderWx();if(TIDES.length&&sel)renderTides();
+}
+async function init(){
+  sel=todayET();
+  const cw=store.get('sc_wx');if(cw){WX=cw;renderWx();}
+  await loadTides();
+  if(!TIDES.length){document.getElementById('tideCard').innerHTML='<div class="err">Tide data could not be loaded from NOAA. Check your connection and reload.</div>';}
+  else{
+    document.getElementById('prev').onclick=()=>{sel=addDays(sel,-1);renderTides();};
+    document.getElementById('next').onclick=()=>{sel=addDays(sel,1);renderTides();};
+    document.getElementById('today').onclick=()=>{sel=todayET();renderTides();};
+    document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'&&!document.getElementById('prev').disabled){sel=addDays(sel,-1);renderTides();}if(e.key==='ArrowRight'&&!document.getElementById('next').disabled){sel=addDays(sel,1);renderTides();}});
+    renderTides();
+  }
+  await loadWx();
+  renderFoot();
+  let lastDay=todayET();
+  setInterval(()=>{const t=todayET();if(!same(t,lastDay)){if(same(sel,lastDay))sel=t;lastDay=t;loadTides().then(()=>{if(TIDES.length)renderTides();});}if(TIDES.length)renderTides();if(WX)renderWx();},60000);
+  setInterval(loadWx,15*60000);
+  setInterval(loadTides,6*3600000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadWx();});
+}
+init();
+})();
+</script>
+</body>
+</html>
