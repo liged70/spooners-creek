@@ -81,6 +81,13 @@ tr.past td{color:var(--muted)}
 footer{margin-top:18px;font-size:12px;color:var(--muted);line-height:1.6}
 footer a,.card a{color:var(--water)}
 .err{padding:24px;color:var(--red)}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:5px;overflow:hidden;background:var(--paper)}
+.seg button{font:500 13px var(--sans);background:transparent;border:0;padding:7px 12px;cursor:pointer;color:var(--ink);white-space:nowrap}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button small{font:500 10px var(--mono);letter-spacing:.06em;opacity:.7;margin-left:3px}
+.seg button[aria-selected="true"]{background:var(--water);color:#fff}
+.seg button:focus-visible{outline:2px solid var(--water);outline-offset:-2px}
+.pop{display:block;font:500 11px var(--mono);color:var(--water)}
 </style>
 </head>
 <body>
@@ -89,9 +96,13 @@ footer a,.card a{color:var(--water)}
     <section class="card" id="wxCard" aria-label="Weather">
       <div class="head">
         <div>
-          <div class="kicker">Marine point forecast · NWS Newport/Morehead City</div>
+          <div class="kicker" id="wxKicker">Marine point forecast · NWS Newport/Morehead City</div>
           <h2>Weather</h2>
           <div class="sub" id="wxArea"></div>
+        </div>
+        <div class="seg" role="tablist" aria-label="Weather location">
+          <button role="tab" data-loc="coast" aria-selected="true">Coast <small>KMRH</small></button>
+          <button role="tab" data-loc="rocky" aria-selected="false">Rocky Mount <small>KRWI</small></button>
         </div>
       </div>
       <div id="wxBody"><div class="sub" style="margin-top:16px">Loading…</div></div>
@@ -261,43 +272,61 @@ function iconSVG(code,text){
 }
 
 // ---------- rendering: weather ----------
+const LOCS={
+ coast:{kicker:'Marine point forecast · NWS Newport/Morehead City',area:'3 NM south of the Morehead City turning basin · zone AMZ158',
+   fcst:'https://forecast.weather.gov/MapClick.php?lat=34.6603&lon=-76.712&FcstType=json',link:'https://forecast.weather.gov/MapClick.php?lat=34.6603&lon=-76.712',
+   station:'KMRH',stationName:'Beaufort Smith Field',unit:'kt',cache:'sc_wx2'},
+ rocky:{kicker:'Point forecast · NWS Raleigh',area:'Rocky Mount-Wilson Regional Airport · Nash County',
+   fcst:'https://forecast.weather.gov/MapClick.php?lat=35.972&lon=-77.859&FcstType=json',link:'https://forecast.weather.gov/MapClick.php?lon=-77.859&lat=35.972',
+   station:'KRWI',stationName:'Rocky Mount-Wilson Regional Airport',unit:'mph',cache:'sc_wx_rocky'}
+};
+let LOC='coast';
 function renderWx(){
+  const cfg=LOCS[LOC], D=LOC==='coast'?WX:WXR, err=LOC==='coast'?wxError:wxErrorR;
+  document.getElementById('wxKicker').textContent=cfg.kicker;
+  document.getElementById('wxArea').textContent=cfg.area;
+  document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.loc===LOC)));
   const body=document.getElementById('wxBody');
-  if(!WX){body.innerHTML='<div class="err">Couldn\'t reach NOAA or the National Weather Service. The page will try again in 15 minutes. <a href="https://forecast.weather.gov/MapClick.php?lat=34.6603&lon=-76.712" target="_blank" rel="noopener">Open the NWS forecast</a>.</div>';return;}
-  const f=WX.fcst,o=WX.obs,now=Date.now();
-  const NWSLINK='<a href="https://forecast.weather.gov/MapClick.php?lat=34.6603&lon=-76.712" target="_blank" rel="noopener">Open the NWS forecast</a>';
-  if(!f){document.getElementById('wxArea').textContent='3 NM south of the Morehead City turning basin · zone AMZ158';
-    body.innerHTML=`<div class="lead"><div></div><div class="stale">Couldn't reach the National Weather Service just now. The page will try again in 15 minutes. ${NWSLINK}.</div></div>`;return;}
-  document.getElementById('wxArea').textContent='3 NM south of the Morehead City turning basin · zone '+(f.zone||'AMZ158');
-  const P=f.periods.map((p,i,a)=>({...p,s:Date.parse(p.start),e:i+1<a.length?Date.parse(a[i+1].start):Date.parse(p.start)+12*36e5}));
-  const live=P.filter(p=>p.e>now);
-  const fetched=Date.parse(f.fetched),issued=Date.parse(f.created);
-  const stale=now-fetched>6*36e5;
+  const NWSLINK=`<a href="${cfg.link}" target="_blank" rel="noopener">Open the NWS forecast</a>`;
+  if(!D){body.innerHTML=`<div class="err">Couldn't reach the National Weather Service just now. The page will try again in 15 minutes. ${NWSLINK}.</div>`;return;}
+  const f=D.fcst,o=D.obs,now=Date.now();
   let h='';
-  (f.hazards||[]).forEach(z=>{h+=`<div class="hazard"><span>⚠</span><span>${esc(z.name)}${z.url?` · <a href="${esc(z.url)}" target="_blank" rel="noopener">details</a>`:''}</span></div>`;});
+  if(f)(f.hazards||[]).forEach(z=>{h+=`<div class="hazard"><span>⚠</span><span>${esc(z.name)}${z.url?` · <a href="${esc(z.url)}" target="_blank" rel="noopener">details</a>`:''}</span></div>`;});
   if(o&&o.air_f!=null){
-    const wind=o.wind_kt==null?'—':(o.wind_kt<1?'Calm':`${o.wind_dir||''} ${Math.round(o.wind_kt)} kt${o.gust_kt!=null?`, gusts ${Math.round(o.gust_kt)} kt`:''}`);
+    const sp=v=>cfg.unit==='mph'?Math.round(v*1.15078):Math.round(v);
+    const wind=o.wind_kt==null?'—':(o.wind_kt<1?'Calm':`${o.wind_dir||''} ${sp(o.wind_kt)} ${cfg.unit}${o.gust_kt!=null?`, gusts ${sp(o.gust_kt)} ${cfg.unit}`:''}`);
     h+=`<div class="now"><div class="temp">${Math.round(o.air_f)}°<small>F</small></div><div class="obsline">
       ${o.text?`<div style="font-weight:600">${esc(o.text)}</div>`:''}
       <div><span>Wind</span> ${wind}</div>
       <div><span>Humidity</span> ${o.rh!=null?Math.round(o.rh)+'%':'—'} · <span>Pressure</span> ${o.pressure_in!=null?o.pressure_in.toFixed(2)+' in':'—'}</div>
-      <div><span>Observed ${o.time?t12(Date.parse(o.time)):''} at Beaufort Smith Field (KMRH)</span></div></div></div>`;
+      <div><span>Observed ${o.time?t12(Date.parse(o.time)):''} at ${cfg.stationName} (${cfg.station})</span></div></div></div>`;
   }
+  if(!f){body.innerHTML=h+`<div class="lead"><div></div><div class="stale">Couldn't reach the National Weather Service forecast just now. The page will try again in 15 minutes. ${NWSLINK}.</div></div>`;return;}
+  const P=f.periods.map((p,i,a)=>({...p,s:Date.parse(p.start),e:i+1<a.length?Date.parse(a[i+1].start):Date.parse(p.start)+12*36e5}));
+  const live=P.filter(p=>p.e>now);
+  const fetched=Date.parse(f.fetched),issued=Date.parse(f.created);
+  const stale=now-fetched>6*36e5;
+  const pop=p=>p.pop?`<span class="pop">${esc(p.pop)}% rain</span>`:'';
   if(live.length){
     const p=live[0];
-    h+=`<div class="lead"><div style="width:64px;height:64px">${iconSVG(p.icon,p.text)}</div><div><div class="name">${esc(p.name)}</div><div class="hl">${p.label} ${esc(p.temp)}°F</div><p>${esc(p.text)}</p></div></div>`;
-    h+=`<div class="periods">`+live.slice(1).map(p=>`<div class="per"><div style="width:32px;height:32px">${iconSVG(p.icon,p.text)}</div><div class="n">${esc(p.name)}</div><div class="tp ${p.label==='Low'?'lo':''}">${p.label==='Low'?'L':'H'} ${esc(p.temp)}°</div><div class="tx">${esc(p.text)}</div></div>`).join('')+`</div>`;
+    h+=`<div class="lead"><div style="width:64px;height:64px">${iconSVG(p.icon,p.text)}</div><div><div class="name">${esc(p.name)}</div><div class="hl">${p.label} ${esc(p.temp)}°F${p.pop?` · ${esc(p.pop)}% chance of rain`:''}</div><p>${esc(p.text)}</p></div></div>`;
+    h+=`<div class="periods">`+live.slice(1).map(p=>`<div class="per"><div style="width:32px;height:32px">${iconSVG(p.icon,p.text)}</div><div class="n">${esc(p.name)}</div><div class="tp ${p.label==='Low'?'lo':''}">${p.label==='Low'?'L':'H'} ${esc(p.temp)}°${pop(p)}</div><div class="tx">${esc(p.text)}</div></div>`).join('')+`</div>`;
   } else {
-    h+=`<div class="lead"><div></div><div class="stale">The saved forecast has expired. <a href="https://forecast.weather.gov/MapClick.php?lat=34.6603&lon=-76.712" target="_blank" rel="noopener">Open the live NWS forecast</a>.</div></div>`;
+    h+=`<div class="lead"><div></div><div class="stale">The saved forecast has expired. ${NWSLINK}.</div></div>`;
   }
-  h+=`<div class="sub" style="margin-top:14px">${issued?`NWS issued ${t12(issued)} ${fDay.format(new Date(issued))} · `:''}updated <span class="${stale?'stale':''}">${ago(fetched)}</span>${wxError?' · <span class="stale">couldn\'t reach NWS, showing last saved forecast</span>':''}${stale?` · <a href="https://forecast.weather.gov/MapClick.php?lat=34.6603&lon=-76.712" target="_blank" rel="noopener">check NWS for the latest</a>`:''}</div>`;
+  h+=`<div class="sub" style="margin-top:14px">${issued?`NWS issued ${t12(issued)} ${fDay.format(new Date(issued))} · `:''}updated <span class="${stale?'stale':''}">${ago(fetched)}</span>${err?' · <span class="stale">couldn\'t reach NWS, showing last saved forecast</span>':''}${stale?` · <a href="${cfg.link}" target="_blank" rel="noopener">check NWS for the latest</a>`:''}</div>`;
   body.innerHTML=h;
+}
+function setLoc(k,push){
+  if(!LOCS[k])return;LOC=k;store.set('sc_loc',k);
+  if(push){try{history.replaceState(null,'',k==='rocky'?'#rocky-mount':'#coast');}catch(e){}}
+  renderWx();
 }
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 function renderFoot(){
   document.getElementById('foot').innerHTML=`Tide heights are NOAA predictions in feet above mean lower low water (MLLW), not live readings. Wind and storms can push actual water higher or lower. Data loads live from NOAA and the National Weather Service each time the page opens, then refreshes every 15 minutes. Times are Eastern. Sunrise, sunset and moon are calculated and approximate.<br>
-  Sources: <a href="https://tidesandcurrents.noaa.gov/stationhome.html?id=8656467" target="_blank" rel="noopener">NOAA Spooners Creek 8656467</a> · <a href="https://forecast.weather.gov/data/obhistory/KMRH.html" target="_blank" rel="noopener">NWS Beaufort Smith Field (KMRH)</a> · <a href="https://tidesandcurrents.noaa.gov/stationhome.html?id=8656483" target="_blank" rel="noopener">NOAA Duke Marine Lab 8656483 (water temp)</a> · <a href="https://forecast.weather.gov/MapClick.php?x=193&y=234&site=mhx&zmx=&zmy=&map_x=192&map_y=233" target="_blank" rel="noopener">NWS marine forecast</a>`;
+  Sources: <a href="https://tidesandcurrents.noaa.gov/stationhome.html?id=8656467" target="_blank" rel="noopener">NOAA Spooners Creek 8656467</a> · <a href="https://forecast.weather.gov/data/obhistory/KMRH.html" target="_blank" rel="noopener">NWS Beaufort Smith Field (KMRH)</a> · <a href="https://tidesandcurrents.noaa.gov/stationhome.html?id=8656483" target="_blank" rel="noopener">NOAA Duke Marine Lab 8656483 (water temp)</a> · <a href="https://forecast.weather.gov/MapClick.php?x=193&y=234&site=mhx&zmx=&zmy=&map_x=192&map_y=233" target="_blank" rel="noopener">NWS marine forecast</a> · <a href="https://forecast.weather.gov/data/obhistory/KRWI.html" target="_blank" rel="noopener">NWS Rocky Mount-Wilson (KRWI)</a> · <a href="https://forecast.weather.gov/MapClick.php?lon=-77.859&lat=35.972" target="_blank" rel="noopener">NWS Rocky Mount forecast</a>`;
 }
 
 // ---------- data loading (live from NOAA and NWS) ----------
@@ -305,7 +334,7 @@ const COOPS='https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?units=eng
 const NWS_JSON='https://forecast.weather.gov/MapClick.php?lat=34.6603&lon=-76.712&FcstType=json';
 const ymd=s=>''+s.y+String(s.m).padStart(2,'0')+String(s.d).padStart(2,'0');
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-let wxError=null, tideRange=null;
+let wxError=null, wxErrorR=null, WXR=null, tideRange=null;
 async function getJ(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error(r.status);return r.json();}
 function setTides(preds){TIDES=preds.map(p=>{const m=p.t.match(/(\d+)-(\d+)-(\d+) (\d+):(\d+)/);return {t:etEpoch(+m[1],+m[2],+m[3],+m[4],+m[5]),type:p.type,v:parseFloat(p.v)};});}
 async function loadTides(){
@@ -315,19 +344,19 @@ async function loadTides(){
     setTides(j.predictions);store.set('sc_tides',j.predictions);}
   catch(e){const c=store.get('sc_tides');if(c&&!TIDES.length)setTides(c);}
 }
-async function loadForecast(){
-  const j=await getJ(NWS_JSON);const d=j.data,t=j.time;
+async function loadForecast(url){
+  const j=await getJ(url||NWS_JSON);const d=j.data,t=j.time;
   return {fetched:new Date().toISOString(),created:j.creationDate,area:j.location.areaDescription,zone:j.location.zone,
     hazards:(d.hazard||[]).map((h,i)=>({name:h,url:((d.hazardUrl||[])[i]||'').replace(/&amp;/g,'&')})),
     periods:t.startPeriodName.map((n,i)=>({name:n,start:t.startValidTime[i],label:t.tempLabel[i],temp:d.temperature[i],pop:d.pop[i],icon:(d.iconLink[i]||'').split('/').pop(),text:(d.text[i]||'').replace(/\s+/g,' ').trim()}))};
 }
-const KMRH='https://api.weather.gov/stations/KMRH/observations';
+const OBS=id=>'https://api.weather.gov/stations/'+id+'/observations';
 const compass=d=>d==null?'':['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(d/22.5)%16];
 const val=q=>q&&q.value!=null?q.value:null;
-async function loadMetar(){
-  let p=null;
-  try{const j=await getJ(KMRH+'/latest');p=j.properties;}catch(e){}
-  if(!p||val(p.temperature)==null){try{const j=await getJ(KMRH+'?limit=6');p=(j.features||[]).map(f=>f.properties).find(x=>val(x.temperature)!=null)||p;}catch(e){}}
+async function loadMetar(id){
+  let p=null;const base=OBS(id||'KMRH');
+  try{const j=await getJ(base+'/latest');p=j.properties;}catch(e){}
+  if(!p||val(p.temperature)==null){try{const j=await getJ(base+'?limit=6');p=(j.features||[]).map(f=>f.properties).find(x=>val(x.temperature)!=null)||p;}catch(e){}}
   if(!p||val(p.temperature)==null)return null;
   const kt=v=>v==null?null:v/1.852, t=val(p.temperature), bp=val(p.barometricPressure);
   return {time:p.timestamp,text:p.textDescription||'',air_f:t*9/5+32,rh:val(p.relativeHumidity),wind_kt:kt(val(p.windSpeed)),gust_kt:kt(val(p.windGust)),wind_dir:compass(val(p.windDirection)),pressure_in:bp==null?null:bp/3386.389};
@@ -336,7 +365,7 @@ async function loadWater(){
   try{const j=await getJ(COOPS+'&station=8656483&date=latest&product=water_temperature');const d=j.data&&j.data[0];return d?{water_f:+d.v,water_time:d.t}:null;}catch(e){return null}
 }
 async function loadObs(){
-  const [m,w]=await Promise.all([loadMetar(),loadWater()]);
+  const [m,w]=await Promise.all([loadMetar('KMRH'),loadWater()]);
   if(!m&&!w)return null;
   return Object.assign({station:'Beaufort Smith Field',id:'KMRH'},m||{},w||{});
 }
@@ -347,11 +376,25 @@ async function loadWx(){
   WX={fcst:f||(prev&&prev.fcst),obs:o||(prev&&prev.obs)};
   if(!WX.fcst&&!WX.obs)WX=null;
   if(f)store.set('sc_wx2',WX);
+  await loadRocky();
   renderWx();if(TIDES.length&&sel)renderTides();
+}
+async function loadRocky(){
+  const cfg=LOCS.rocky, prev=WXR||store.get(cfg.cache);
+  const [f,o]=await Promise.all([loadForecast(cfg.fcst).catch(()=>null),loadMetar('KRWI').catch(()=>null)]);
+  wxErrorR=f?null:new Date();
+  WXR={fcst:f||(prev&&prev.fcst),obs:o||(prev&&prev.obs)};
+  if(!WXR.fcst&&!WXR.obs)WXR=null;
+  if(f)store.set(cfg.cache,WXR);
 }
 async function init(){
   sel=todayET();
-  const cw=store.get('sc_wx2');if(cw){WX=cw;renderWx();}
+  const hk=(location.hash||'').toLowerCase();
+  LOC=hk==='#rocky-mount'?'rocky':hk==='#coast'?'coast':(store.get('sc_loc')==='rocky'?'rocky':'coast');
+  document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>setLoc(b.dataset.loc,true));
+  window.addEventListener('hashchange',()=>{const h=location.hash.toLowerCase();if(h==='#rocky-mount')setLoc('rocky');else if(h==='#coast')setLoc('coast');});
+  const cw=store.get('sc_wx2');if(cw)WX=cw;const cr=store.get(LOCS.rocky.cache);if(cr)WXR=cr;
+  if(WX||WXR)renderWx();
   await loadTides();
   if(!TIDES.length){document.getElementById('tideCard').innerHTML='<div class="err">Tide data could not be loaded from NOAA. Check your connection and reload.</div>';}
   else{
@@ -364,7 +407,7 @@ async function init(){
   await loadWx();
   renderFoot();
   let lastDay=todayET();
-  setInterval(()=>{const t=todayET();if(!same(t,lastDay)){if(same(sel,lastDay))sel=t;lastDay=t;loadTides().then(()=>{if(TIDES.length)renderTides();});}if(TIDES.length)renderTides();if(WX)renderWx();},60000);
+  setInterval(()=>{const t=todayET();if(!same(t,lastDay)){if(same(sel,lastDay))sel=t;lastDay=t;loadTides().then(()=>{if(TIDES.length)renderTides();});}if(TIDES.length)renderTides();if(WX||WXR)renderWx();},60000);
   setInterval(loadWx,15*60000);
   setInterval(loadTides,6*3600000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadWx();});
