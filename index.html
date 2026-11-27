@@ -214,7 +214,7 @@ function renderTides(){
    <div class="fact"><div class="l">Sunrise</div><div class="v">${t12(sun.rise)}</div></div>
    <div class="fact"><div class="l">Sunset</div><div class="v">${t12(sun.set)}</div></div>
    <div class="fact"><div class="l">Moon</div><div class="v">${moonSVG(mn.f)}<span style="font-size:18px">${Math.round(mn.illum*100)}%</span></div><div class="s">${mn.name}</div></div>
-   <div class="fact"><div class="l">Water temp</div><div class="v">${wt}</div><div class="s">Beaufort gauge${o&&o.time?' · '+t12(parseLocal(o.time)):''}</div></div>`;
+   <div class="fact"><div class="l">Water temp</div><div class="v">${wt}</div><div class="s">Duke Marine Lab gauge${o&&o.water_time?' · '+t12(parseLocal(o.water_time)):''}</div></div>`;
   renderWeek();
 }
 function renderWeek(){
@@ -276,11 +276,12 @@ function renderWx(){
   let h='';
   (f.hazards||[]).forEach(z=>{h+=`<div class="hazard"><span>⚠</span><span>${esc(z.name)}${z.url?` · <a href="${esc(z.url)}" target="_blank" rel="noopener">details</a>`:''}</span></div>`;});
   if(o&&o.air_f!=null){
-    const inHg=o.pressure_mb!=null?(o.pressure_mb*0.02953).toFixed(2):null;
+    const wind=o.wind_kt==null?'—':(o.wind_kt<1?'Calm':`${o.wind_dir||''} ${Math.round(o.wind_kt)} kt${o.gust_kt!=null?`, gusts ${Math.round(o.gust_kt)} kt`:''}`);
     h+=`<div class="now"><div class="temp">${Math.round(o.air_f)}°<small>F</small></div><div class="obsline">
-      <div><span>Wind</span> ${o.wind_dir||''} ${o.wind_kt!=null?Math.round(o.wind_kt)+' kt':'—'}${o.gust_kt!=null?`, gusts ${Math.round(o.gust_kt)} kt`:''}</div>
-      <div><span>Water</span> ${o.water_f!=null?o.water_f.toFixed(1)+'°F':'—'} · <span>Pressure</span> ${o.pressure_mb!=null?inHg+' in':'—'}</div>
-      <div><span>Observed ${o.time?t12(parseLocal(o.time)):''} at ${esc(o.station)}</span></div></div></div>`;
+      ${o.text?`<div style="font-weight:600">${esc(o.text)}</div>`:''}
+      <div><span>Wind</span> ${wind}</div>
+      <div><span>Humidity</span> ${o.rh!=null?Math.round(o.rh)+'%':'—'} · <span>Pressure</span> ${o.pressure_in!=null?o.pressure_in.toFixed(2)+' in':'—'}</div>
+      <div><span>Observed ${o.time?t12(Date.parse(o.time)):''} at Beaufort Smith Field (KMRH)</span></div></div></div>`;
   }
   if(live.length){
     const p=live[0];
@@ -296,7 +297,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;',
 
 function renderFoot(){
   document.getElementById('foot').innerHTML=`Tide heights are NOAA predictions in feet above mean lower low water (MLLW), not live readings. Wind and storms can push actual water higher or lower. Data loads live from NOAA and the National Weather Service each time the page opens, then refreshes every 15 minutes. Times are Eastern. Sunrise, sunset and moon are calculated and approximate.<br>
-  Sources: <a href="https://tidesandcurrents.noaa.gov/stationhome.html?id=8656467" target="_blank" rel="noopener">NOAA Spooners Creek 8656467</a> · <a href="https://tidesandcurrents.noaa.gov/stationhome.html?id=8656483" target="_blank" rel="noopener">NOAA Beaufort 8656483</a> · <a href="https://forecast.weather.gov/MapClick.php?x=193&y=234&site=mhx&zmx=&zmy=&map_x=192&map_y=233" target="_blank" rel="noopener">NWS marine forecast</a>`;
+  Sources: <a href="https://tidesandcurrents.noaa.gov/stationhome.html?id=8656467" target="_blank" rel="noopener">NOAA Spooners Creek 8656467</a> · <a href="https://forecast.weather.gov/data/obhistory/KMRH.html" target="_blank" rel="noopener">NWS Beaufort Smith Field (KMRH)</a> · <a href="https://tidesandcurrents.noaa.gov/stationhome.html?id=8656483" target="_blank" rel="noopener">NOAA Duke Marine Lab 8656483 (water temp)</a> · <a href="https://forecast.weather.gov/MapClick.php?x=193&y=234&site=mhx&zmx=&zmy=&map_x=192&map_y=233" target="_blank" rel="noopener">NWS marine forecast</a>`;
 }
 
 // ---------- data loading (live from NOAA and NWS) ----------
@@ -320,24 +321,37 @@ async function loadForecast(){
     hazards:(d.hazard||[]).map((h,i)=>({name:h,url:((d.hazardUrl||[])[i]||'').replace(/&amp;/g,'&')})),
     periods:t.startPeriodName.map((n,i)=>({name:n,start:t.startValidTime[i],label:t.tempLabel[i],temp:d.temperature[i],pop:d.pop[i],icon:(d.iconLink[i]||'').split('/').pop(),text:(d.text[i]||'').replace(/\s+/g,' ').trim()}))};
 }
+const KMRH='https://api.weather.gov/stations/KMRH/observations';
+const compass=d=>d==null?'':['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(d/22.5)%16];
+const val=q=>q&&q.value!=null?q.value:null;
+async function loadMetar(){
+  let p=null;
+  try{const j=await getJ(KMRH+'/latest');p=j.properties;}catch(e){}
+  if(!p||val(p.temperature)==null){try{const j=await getJ(KMRH+'?limit=6');p=(j.features||[]).map(f=>f.properties).find(x=>val(x.temperature)!=null)||p;}catch(e){}}
+  if(!p||val(p.temperature)==null)return null;
+  const kt=v=>v==null?null:v/1.852, t=val(p.temperature), bp=val(p.barometricPressure);
+  return {time:p.timestamp,text:p.textDescription||'',air_f:t*9/5+32,rh:val(p.relativeHumidity),wind_kt:kt(val(p.windSpeed)),gust_kt:kt(val(p.windGust)),wind_dir:compass(val(p.windDirection)),pressure_in:bp==null?null:bp/3386.389};
+}
+async function loadWater(){
+  try{const j=await getJ(COOPS+'&station=8656483&date=latest&product=water_temperature');const d=j.data&&j.data[0];return d?{water_f:+d.v,water_time:d.t}:null;}catch(e){return null}
+}
 async function loadObs(){
-  const g=async p=>{try{const j=await getJ(COOPS+'&station=8656483&date=latest&product='+p);return (j.data&&j.data[0])||null}catch(e){return null}};
-  const [a,w,wi,pr]=await Promise.all(['air_temperature','water_temperature','wind','air_pressure'].map(g));
-  if(!a&&!w&&!wi&&!pr)return null;
-  return {station:'Beaufort, Duke Marine Lab',id:'8656483',time:(a||w||wi||pr).t,air_f:a?+a.v:null,water_f:w?+w.v:null,wind_kt:wi?+wi.s:null,gust_kt:wi?+wi.g:null,wind_dir:wi?wi.dr:null,pressure_mb:pr?+pr.v:null};
+  const [m,w]=await Promise.all([loadMetar(),loadWater()]);
+  if(!m&&!w)return null;
+  return Object.assign({station:'Beaufort Smith Field',id:'KMRH'},m||{},w||{});
 }
 async function loadWx(){
-  const prev=WX||store.get('sc_wx');
+  const prev=WX||store.get('sc_wx2');
   const [f,o]=await Promise.all([loadForecast().catch(()=>null),loadObs().catch(()=>null)]);
   wxError=f?null:new Date();
   WX={fcst:f||(prev&&prev.fcst),obs:o||(prev&&prev.obs)};
   if(!WX.fcst&&!WX.obs)WX=null;
-  if(f)store.set('sc_wx',WX);
+  if(f)store.set('sc_wx2',WX);
   renderWx();if(TIDES.length&&sel)renderTides();
 }
 async function init(){
   sel=todayET();
-  const cw=store.get('sc_wx');if(cw){WX=cw;renderWx();}
+  const cw=store.get('sc_wx2');if(cw){WX=cw;renderWx();}
   await loadTides();
   if(!TIDES.length){document.getElementById('tideCard').innerHTML='<div class="err">Tide data could not be loaded from NOAA. Check your connection and reload.</div>';}
   else{
