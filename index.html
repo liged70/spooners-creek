@@ -88,6 +88,9 @@ footer a,.card a{color:var(--water)}
 .seg button[aria-selected="true"]{background:var(--water);color:#fff}
 .seg button:focus-visible{outline:2px solid var(--water);outline-offset:-2px}
 .pop{display:block;font:500 11px var(--mono);color:var(--water)}
+.seg .abbr{display:none}
+@media (max-width:440px){.seg button small{display:none}}
+@media (max-width:330px){.seg .full{display:none}.seg .abbr{display:inline}}
 </style>
 </head>
 <body>
@@ -101,8 +104,8 @@ footer a,.card a{color:var(--water)}
           <div class="sub" id="wxArea"></div>
         </div>
         <div class="seg" role="tablist" aria-label="Weather location">
-          <button role="tab" data-loc="coast" aria-selected="true">Coast <small>KMRH</small></button>
-          <button role="tab" data-loc="rocky" aria-selected="false">Rocky Mount <small>KRWI</small></button>
+          <button role="tab" data-loc="coast" aria-selected="true"><span class="full">Morehead City</span><span class="abbr">MHC</span> <small>KMRH</small></button>
+          <button role="tab" data-loc="rocky" aria-selected="false"><span class="full">Rocky Mount</span><span class="abbr">RM</span> <small>KRWI</small></button>
         </div>
       </div>
       <div id="wxBody"><div class="sub" style="margin-top:16px">Loading…</div></div>
@@ -319,7 +322,7 @@ function renderWx(){
 }
 function setLoc(k,push){
   if(!LOCS[k])return;LOC=k;store.set('sc_loc',k);
-  if(push){try{history.replaceState(null,'',k==='rocky'?'#rocky-mount':'#coast');}catch(e){}}
+  if(push){try{history.replaceState(null,'',k==='rocky'?'#rocky-mount':'#morehead-city');}catch(e){}}
   renderWx();
 }
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -390,9 +393,9 @@ async function loadRocky(){
 async function init(){
   sel=todayET();
   const hk=(location.hash||'').toLowerCase();
-  LOC=hk==='#rocky-mount'?'rocky':hk==='#coast'?'coast':(store.get('sc_loc')==='rocky'?'rocky':'coast');
+  LOC=hk==='#rocky-mount'?'rocky':(hk==='#morehead-city'||hk==='#coast')?'coast':(store.get('sc_loc')==='rocky'?'rocky':'coast');
   document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>setLoc(b.dataset.loc,true));
-  window.addEventListener('hashchange',()=>{const h=location.hash.toLowerCase();if(h==='#rocky-mount')setLoc('rocky');else if(h==='#coast')setLoc('coast');});
+  window.addEventListener('hashchange',()=>{const h=location.hash.toLowerCase();if(h==='#rocky-mount')setLoc('rocky');else if(h==='#morehead-city'||h==='#coast')setLoc('coast');});
   const cw=store.get('sc_wx2');if(cw)WX=cw;const cr=store.get(LOCS.rocky.cache);if(cr)WXR=cr;
   if(WX||WXR)renderWx();
   await loadTides();
